@@ -703,6 +703,20 @@ do
     -- But for many setups, the LSP (`ts_ls`) will work just fine
     -- ts_ls = {},
 
+    -- Backend and web development
+    jdtls = {},
+    basedpyright = {},
+    ruff = {
+      -- BasedPyright is the source of hover/type information.
+      on_attach = function(client) client.server_capabilities.hoverProvider = false end,
+    },
+    vtsls = {},
+    eslint = {},
+    html = {},
+    cssls = {},
+    jsonls = {},
+    tailwindcss = {},
+
     stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs
@@ -762,7 +776,8 @@ do
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
-    -- You can add other tools here that you want Mason to install
+    -- External formatter for web development.
+    'prettier',
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -783,10 +798,19 @@ do
   require('conform').setup {
     notify_on_error = false,
     format_on_save = function(bufnr)
-      -- You can specify filetypes to autoformat on save here:
+      -- Autoformat only where we have an explicit formatter source of truth.
       local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
+        python = true,
+        javascript = true,
+        javascriptreact = true,
+        typescript = true,
+        typescriptreact = true,
+        html = true,
+        css = true,
+        scss = true,
+        json = true,
+        jsonc = true,
+        yaml = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -797,14 +821,20 @@ do
     default_format_opts = {
       lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
     },
-    -- You can also specify external formatters in here.
+    -- External formatters are the source of truth for Python and web files.
+    -- Java intentionally has no external formatter here; <leader>f falls back to JDTLS.
     formatters_by_ft = {
-      -- rust = { 'rustfmt' },
-      -- Conform can also run multiple formatters sequentially
-      -- python = { "isort", "black" },
-      --
-      -- You can use 'stop_after_first' to run the first available formatter from the list
-      -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      python = { 'ruff_format' },
+      javascript = { 'prettier' },
+      javascriptreact = { 'prettier' },
+      typescript = { 'prettier' },
+      typescriptreact = { 'prettier' },
+      html = { 'prettier' },
+      css = { 'prettier' },
+      scss = { 'prettier' },
+      json = { 'prettier' },
+      jsonc = { 'prettier' },
+      yaml = { 'prettier' },
     },
   }
 
@@ -906,8 +936,31 @@ do
   -- NOTE: You can also specify a branch or a specific commit
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
-  -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+  -- Ensure basic parsers and the primary development stack are installed
+  local parsers = {
+    'bash',
+    'c',
+    'diff',
+    'html',
+    'lua',
+    'luadoc',
+    'markdown',
+    'markdown_inline',
+    'query',
+    'vim',
+    'vimdoc',
+    'java',
+    'python',
+    'javascript',
+    'typescript',
+    'tsx',
+    'css',
+    'json',
+    'jsonc',
+    'yaml',
+    'sql',
+    'dockerfile',
+  }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
