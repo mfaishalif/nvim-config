@@ -706,6 +706,12 @@ do
     -- Backend and web development
     basedpyright = {},
     ruff = {
+      capabilities = {
+        general = {
+          positionEncodings = { 'utf-16' },
+        },
+      },
+
       -- BasedPyright is the source of hover/type information.
       on_attach = function(client) client.server_capabilities.hoverProvider = false end,
     },
