@@ -16,6 +16,49 @@ local dap_python = require 'dap-python'
 -- still resolved from VIRTUAL_ENV/CONDA_PREFIX or common local venv folders.
 dap_python.setup 'uv'
 
+-- vscode-js-debug exposes a standalone DAP server. Mason puts the
+-- `js-debug-adapter` launcher on PATH, so nvim-dap only needs to provide a
+-- dynamically allocated port.
+dap.adapters['pwa-node'] = {
+  type = 'server',
+  host = '127.0.0.1',
+  port = '${port}',
+  executable = {
+    command = 'js-debug-adapter',
+    args = { '${port}' },
+  },
+}
+
+local js_languages = {
+  'javascript',
+  'javascriptreact',
+  'typescript',
+  'typescriptreact',
+}
+
+local js_configurations = {
+  {
+    type = 'pwa-node',
+    request = 'launch',
+    name = 'Launch current file (Node)',
+    program = '${file}',
+    cwd = '${workspaceFolder}',
+    sourceMaps = true,
+  },
+  {
+    type = 'pwa-node',
+    request = 'attach',
+    name = 'Attach to Node process',
+    processId = require('dap.utils').pick_process,
+    cwd = '${workspaceFolder}',
+    sourceMaps = true,
+  },
+}
+
+for _, language in ipairs(js_languages) do
+  dap.configurations[language] = vim.deepcopy(js_configurations)
+end
+
 dapui.setup {
   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
   controls = {

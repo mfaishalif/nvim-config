@@ -787,6 +787,9 @@ do
     'java-debug-adapter',
     'java-test',
 
+    -- JavaScript / TypeScript debugging.
+    'js-debug-adapter',
+
     -- External formatter for web development.
     'prettier',
   })
