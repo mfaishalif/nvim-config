@@ -704,7 +704,6 @@ do
     -- ts_ls = {},
 
     -- Backend and web development
-    jdtls = {},
     basedpyright = {},
     ruff = {
       -- BasedPyright is the source of hover/type information.
@@ -757,6 +756,7 @@ do
     gh 'mason-org/mason.nvim',
     gh 'mason-org/mason-lspconfig.nvim',
     gh 'WhoIsSethDaniel/mason-tool-installer.nvim',
+    gh 'mfussenegger/nvim-jdtls',
   }
 
   -- Automatically install LSPs and related tools to stdpath for Neovim
@@ -776,6 +776,11 @@ do
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
+    -- Java tooling. JDTLS is started per-project from ftplugin/java.lua.
+    'jdtls',
+    'java-debug-adapter',
+    'java-test',
+
     -- External formatter for web development.
     'prettier',
   })
@@ -1009,7 +1014,13 @@ do
 end
 
 -- ============================================================
--- SECTION 10: OPTIONAL EXAMPLES / NEXT STEPS
+-- SECTION 10: DEBUGGING
+-- Generic Debug Adapter Protocol (DAP) setup
+-- ============================================================
+require 'custom.debug'
+
+-- ============================================================
+-- SECTION 11: OPTIONAL EXAMPLES / NEXT STEPS
 -- kickstart.plugins.* examples
 -- ============================================================
 do
