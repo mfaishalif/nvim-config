@@ -5,10 +5,16 @@ vim.pack.add {
   'https://github.com/mfussenegger/nvim-dap',
   'https://github.com/rcarriga/nvim-dap-ui',
   'https://github.com/nvim-neotest/nvim-nio',
+  'https://github.com/mfussenegger/nvim-dap-python',
 }
 
 local dap = require 'dap'
 local dapui = require 'dapui'
+local dap_python = require 'dap-python'
+
+-- Let uv provide the debugpy adapter on demand. Project interpreters are
+-- still resolved from VIRTUAL_ENV/CONDA_PREFIX or common local venv folders.
+dap_python.setup 'uv'
 
 dapui.setup {
   icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
