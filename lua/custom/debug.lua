@@ -10,53 +10,59 @@ vim.pack.add {
 
 local dap = require 'dap'
 local dapui = require 'dapui'
-local dap_python = require 'dap-python'
+local devprofile = require 'custom.devprofile'
 
--- Let uv provide the debugpy adapter on demand. Project interpreters are
--- still resolved from VIRTUAL_ENV/CONDA_PREFIX or common local venv folders.
-dap_python.setup 'uv'
+if devprofile.enabled 'python' then
+  local dap_python = require 'dap-python'
 
--- vscode-js-debug exposes a standalone DAP server. Mason puts the
--- `js-debug-adapter` launcher on PATH, so nvim-dap only needs to provide a
--- dynamically allocated port.
-dap.adapters['pwa-node'] = {
-  type = 'server',
-  host = '127.0.0.1',
-  port = '${port}',
-  executable = {
-    command = 'js-debug-adapter',
-    args = { '${port}' },
-  },
-}
+  -- Let uv provide the debugpy adapter on demand. Project interpreters are
+  -- still resolved from VIRTUAL_ENV/CONDA_PREFIX or common local venv folders.
+  dap_python.setup 'uv'
+end
 
-local js_languages = {
-  'javascript',
-  'javascriptreact',
-  'typescript',
-  'typescriptreact',
-}
+if devprofile.enabled 'node' then
+  -- vscode-js-debug exposes a standalone DAP server. Mason puts the
+  -- `js-debug-adapter` launcher on PATH, so nvim-dap only needs to provide a
+  -- dynamically allocated port.
+  dap.adapters['pwa-node'] = {
+    type = 'server',
+    host = '127.0.0.1',
+    port = '${port}',
+    executable = {
+      command = 'js-debug-adapter',
+      args = { '${port}' },
+    },
+  }
 
-local js_configurations = {
-  {
-    type = 'pwa-node',
-    request = 'launch',
-    name = 'Launch current file (Node)',
-    program = '${file}',
-    cwd = '${workspaceFolder}',
-    sourceMaps = true,
-  },
-  {
-    type = 'pwa-node',
-    request = 'attach',
-    name = 'Attach to Node process',
-    processId = require('dap.utils').pick_process,
-    cwd = '${workspaceFolder}',
-    sourceMaps = true,
-  },
-}
+  local js_languages = {
+    'javascript',
+    'javascriptreact',
+    'typescript',
+    'typescriptreact',
+  }
 
-for _, language in ipairs(js_languages) do
-  dap.configurations[language] = vim.deepcopy(js_configurations)
+  local js_configurations = {
+    {
+      type = 'pwa-node',
+      request = 'launch',
+      name = 'Launch current file (Node)',
+      program = '${file}',
+      cwd = '${workspaceFolder}',
+      sourceMaps = true,
+    },
+    {
+      type = 'pwa-node',
+      request = 'attach',
+      name = 'Attach to Node process',
+      processId = require('dap.utils').pick_process,
+      cwd = '${workspaceFolder}',
+      sourceMaps = true,
+    },
+  }
+
+  for _, language in ipairs(js_languages) do
+    dap.configurations[language] = vim.deepcopy(js_configurations)
+  end
 end
 
 dapui.setup {

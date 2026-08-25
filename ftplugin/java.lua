@@ -1,3 +1,8 @@
+local devprofile = require 'custom.devprofile'
+if not devprofile.enabled 'java' then
+  return
+end
+
 local jdtls = require 'jdtls'
 
 -- Prefer project-level markers for Maven/Gradle workspaces.

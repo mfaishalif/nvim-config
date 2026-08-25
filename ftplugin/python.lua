@@ -1,3 +1,8 @@
+local devprofile = require 'custom.devprofile'
+if not devprofile.enabled 'python' then
+  return
+end
+
 local dap_python = require 'dap-python'
 
 local map = function(mode, keys, func, desc)
