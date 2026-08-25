@@ -970,7 +970,6 @@ do
     'tsx',
     'css',
     'json',
-    'jsonc',
     'yaml',
     'sql',
     'dockerfile',
