@@ -84,6 +84,19 @@ I hope you enjoy your Neovim journey,
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
 
+local devprofile = require 'custom.devprofile'
+
+if devprofile.in_devcontainer() then
+  vim.g.clipboard = 'osc52'
+end
+
+local unknown_profiles = devprofile.unknown()
+if #unknown_profiles > 0 then
+  vim.schedule(function()
+    vim.notify('Ignoring unknown NVIM_DEV_PROFILE value(s): ' .. table.concat(unknown_profiles, ', '), vim.log.levels.WARN)
+  end)
+end
+
 -- ============================================================
 -- SECTION 1: OPTIONS
 -- Core Neovim settings, leaders, options
@@ -703,25 +716,6 @@ do
     -- But for many setups, the LSP (`ts_ls`) will work just fine
     -- ts_ls = {},
 
-    -- Backend and web development
-    basedpyright = {},
-    ruff = {
-      capabilities = {
-        general = {
-          positionEncodings = { 'utf-16' },
-        },
-      },
-
-      -- BasedPyright is the source of hover/type information.
-      on_attach = function(client) client.server_capabilities.hoverProvider = false end,
-    },
-    vtsls = {},
-    eslint = {},
-    html = {},
-    cssls = {},
-    jsonls = {},
-    tailwindcss = {},
-
     stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs
@@ -757,6 +751,29 @@ do
     },
   }
 
+  if devprofile.enabled 'python' then
+    servers.basedpyright = {}
+    servers.ruff = {
+      capabilities = {
+        general = {
+          positionEncodings = { 'utf-16' },
+        },
+      },
+
+      -- BasedPyright is the source of hover/type information.
+      on_attach = function(client) client.server_capabilities.hoverProvider = false end,
+    }
+  end
+
+  if devprofile.enabled 'node' then
+    servers.vtsls = {}
+    servers.eslint = {}
+    servers.html = {}
+    servers.cssls = {}
+    servers.jsonls = {}
+    servers.tailwindcss = {}
+  end
+
   vim.pack.add {
     gh 'neovim/nvim-lspconfig',
     gh 'mason-org/mason.nvim',
@@ -781,18 +798,25 @@ do
   --
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
-  vim.list_extend(ensure_installed, {
-    -- Java tooling. JDTLS is started per-project from ftplugin/java.lua.
-    'jdtls',
-    'java-debug-adapter',
-    'java-test',
 
-    -- JavaScript / TypeScript debugging.
-    'js-debug-adapter',
+  if devprofile.enabled 'java' then
+    vim.list_extend(ensure_installed, {
+      -- Java tooling. JDTLS is started per-project from ftplugin/java.lua.
+      'jdtls',
+      'java-debug-adapter',
+      'java-test',
+    })
+  end
 
-    -- External formatter for web development.
-    'prettier',
-  })
+  if devprofile.enabled 'node' then
+    vim.list_extend(ensure_installed, {
+      -- JavaScript / TypeScript debugging.
+      'js-debug-adapter',
+
+      -- External formatter for web development.
+      'prettier',
+    })
+  end
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -809,47 +833,52 @@ end
 do
   -- [[ Formatting ]]
   vim.pack.add { gh 'stevearc/conform.nvim' }
+
+  local formatters_by_ft = {}
+  local format_on_save_filetypes = {}
+
+  if devprofile.enabled 'python' then
+    formatters_by_ft.python = { 'ruff_format' }
+    format_on_save_filetypes.python = true
+  end
+
+  if devprofile.enabled 'node' then
+    formatters_by_ft.javascript = { 'prettier' }
+    formatters_by_ft.javascriptreact = { 'prettier' }
+    formatters_by_ft.typescript = { 'prettier' }
+    formatters_by_ft.typescriptreact = { 'prettier' }
+    formatters_by_ft.html = { 'prettier' }
+    formatters_by_ft.css = { 'prettier' }
+    formatters_by_ft.scss = { 'prettier' }
+    formatters_by_ft.json = { 'prettier' }
+    formatters_by_ft.jsonc = { 'prettier' }
+    formatters_by_ft.yaml = { 'prettier' }
+
+    format_on_save_filetypes.javascript = true
+    format_on_save_filetypes.javascriptreact = true
+    format_on_save_filetypes.typescript = true
+    format_on_save_filetypes.typescriptreact = true
+    format_on_save_filetypes.html = true
+    format_on_save_filetypes.css = true
+    format_on_save_filetypes.scss = true
+    format_on_save_filetypes.json = true
+    format_on_save_filetypes.jsonc = true
+    format_on_save_filetypes.yaml = true
+  end
+
   require('conform').setup {
     notify_on_error = false,
     format_on_save = function(bufnr)
       -- Autoformat only where we have an explicit formatter source of truth.
-      local enabled_filetypes = {
-        python = true,
-        javascript = true,
-        javascriptreact = true,
-        typescript = true,
-        typescriptreact = true,
-        html = true,
-        css = true,
-        scss = true,
-        json = true,
-        jsonc = true,
-        yaml = true,
-      }
-      if enabled_filetypes[vim.bo[bufnr].filetype] then
-        return { timeout_ms = 500 }
-      else
-        return nil
-      end
+      if format_on_save_filetypes[vim.bo[bufnr].filetype] then return { timeout_ms = 500 } end
+      return nil
     end,
     default_format_opts = {
       lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
     },
     -- External formatters are the source of truth for Python and web files.
     -- Java intentionally has no external formatter here; <leader>f falls back to JDTLS.
-    formatters_by_ft = {
-      python = { 'ruff_format' },
-      javascript = { 'prettier' },
-      javascriptreact = { 'prettier' },
-      typescript = { 'prettier' },
-      typescriptreact = { 'prettier' },
-      html = { 'prettier' },
-      css = { 'prettier' },
-      scss = { 'prettier' },
-      json = { 'prettier' },
-      jsonc = { 'prettier' },
-      yaml = { 'prettier' },
-    },
+    formatters_by_ft = formatters_by_ft,
   }
 
   vim.keymap.set({ 'n', 'v' }, '<leader>f', function() require('conform').format { async = true } end, { desc = '[F]ormat buffer' })
