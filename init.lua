@@ -87,7 +87,22 @@ P.S. You can delete this when you're done too. It's your config now! :)
 local devprofile = require 'custom.devprofile'
 
 if devprofile.in_devcontainer() then
-  vim.g.clipboard = 'osc52'
+  local osc52 = require 'vim.ui.clipboard.osc52'
+  local function empty_paste()
+    return { {}, 'v' }
+  end
+
+  vim.g.clipboard = {
+    name = 'OSC 52 (copy only)',
+    copy = {
+      ['+'] = osc52.copy('+'),
+      ['*'] = osc52.copy('*'),
+    },
+    paste = {
+      ['+'] = empty_paste,
+      ['*'] = empty_paste,
+    },
+  }
 end
 
 local unknown_profiles = devprofile.unknown()
